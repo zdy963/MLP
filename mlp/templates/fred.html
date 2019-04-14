@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %} Fred Search {% endblock %}
+
+
+{% block css %}
+    <style>
+        .axis path {
+            fill: none;
+            stroke: #CCCCCC;
+        }
+
+        .input_blank {
+            display: inline-block;
+            width: auto;
+            vertical-align: middle;
+            margin-right: .5rem !important;
+        }
+
+        .main_content {
+            margin-top: 30px;
+        }
+
+        .search_bar {
+            margin-left: 100px;
+        }
+    </style>
+{% endblock %}
+
+{% block js %}
+    <script src="//d3js.org/d3.v4.min.js"></script>
+    <script>
+        function search() {
+            let ticker = $('#fred_search').val();
+            console.log(ticker);
+            $.ajax({
+                type: "GET",
+                url: "fred_search/" + ticker,
+                success: function (data) {
+                    init_svg(data)
+
+                }
+            })
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container main_content">
+        <div class="search_bar">
+            <input class="form-control mr-sm-2 input_blank" placeholder="Search ticker"
+                   id="fred_search" name="fred_search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" onclick="search()">Search</button>
+        </div>
+        <div id="root"></div>
+    </div>
+
+    <script>
+        function init_svg(json) {
+            // 获取数据
+            let status = json['status'];
+            if (status) {
+                alert(json['value']);
+                $('#fred_search').val('')
+            } else {
+                let value = json['value'];
+                let parseDate = d3.timeParse("%Y-%m-%d");
+                let date = json['date'].map(parseDate);
+
+                var width = 600;
+
+                d3.selectAll("svg").remove();
+
+                //创建svg
+                var svg = d3.select('#root')
+                    .append('svg')
+                    .attr('width', width + 200)
+                    .attr('height', 600)
+                    .style("background-color", "#FFFFFF");
+
+                //构建y轴的比例尺
+                var ymax = d3.max(value, function (d) {
+                    return d
+                }) + 100; //为了增大图表y的上限
+
+                var ymin = d3.min(value, function (d) {
+                    return d
+                }) - 100; //为了增大图表y的上限
+
+                var y = d3.scaleLinear()
+                    .domain([ymin, ymax])
+                    .range([400, 0]);
+
+                let axisY = d3.axisLeft(y);
+                {#let axisY2 = d3.axisRight(y);#}
+                var axisYG = svg.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(100,100)')
+                    .call(axisY);
+                {#.call(axisY2);#}
+
+                //绘制innerY
+                axisYG.selectAll('g.tick')
+                    .selectAll('line')
+                    .attr('x1', -5)
+                    .attr('x2', width)
+                    .attr('stroke', '#CCCCCC');
+
+                //构建x轴比例尺
+                var x = d3.scaleTime()
+                    .domain(d3.extent(date))
+                    .range([0, width - 10]);
+
+                var axisX = d3.axisBottom(x)
+                    .ticks(6);
+
+
+                var axisXG = svg.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(100,500)')
+                    .call(axisX);
+
+                //绘制innerX
+                axisXG.selectAll('g.tick')
+                    .selectAll('line')
+                    .attr('y1', -400)
+                    .attr('y2', 5)
+                    .attr('stroke', '#CCCCCC');
+
+                //绘制line
+                //构建一个默认为直线的线条绘制器
+                var line = d3.line()
+                    .x(function (d, i) {
+                        return x(date[i]);
+                    })
+                    .y(function (d) {
+                        return y(d)
+                    })
+                    .curve(d3.curveBundle.beta(0.5));
+
+                //构建g进行偏移处理,构建path绑定数据后,调用绘制器line
+                svg.append('g')
+                    .attr('transform', 'translate(100,100)')
+                    .append('path')
+                    .style('fill', 'none') //此处需要将处理是为了折线只显示线条
+                    .style('stroke', "#E77E32")
+                    .style('stroke-width', 3)
+                    .datum(value)
+                    .attr('d', line);
+            }
+        }
+    </script>
+
+{% endblock %}

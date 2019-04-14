@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %} DTCC {% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="../../static/js/jquery.min.js"></script>
+    <script language="JavaScript1.2">
+
+        $(document).ready(function () {
+
+            // Remove the fixed height from the layout's outerwrapper
+            $("#outerWrapper").css({height: "auto"});
+
+            // Turn off caching for file loads
+            $.ajaxSetup({cache: false});
+
+            // Load initial data into grids
+            $("div.pollingGrid").loadData();
+
+            // Kick off data polling for grids
+            $("div.pollingGrid").startPolling();
+
+            //Attach click functionality to all refresh buttons
+            $("a.refreshBtn").click(function () {
+
+                var $controlID = $(this).attr("controlID");
+                $("#" + $controlID + "Data").loadData();
+                return false;
+            });
+
+
+            //**Max/Restore functionality**
+            // Make sure all restore buttons are hidden
+            $(".restoreBtn").hide();
+            // Attach click functionality to all max buttons
+            $("a.maxBtn").click(function () {
+
+                var $controlID = $(this).attr("controlID");
+                var gridControlID = "#" + $controlID + "Grid";
+                var dataControlID = "#" + $controlID + "Data";
+
+                // Hide all and then show only this control
+                $("div.gridBody").hide();
+                $(gridControlID).show();
+
+                // Toggle the Max and Restore buttons
+                $(this).hide();
+                $("a.restoreBtn[controlID=" + $controlID + "]").show();
+                //.css({"border": "1px solid #dadada"});
+
+                // Expand this control
+                $(gridControlID).animate({
+                        height: '1324px'
+                    }, 300, function () {
+                    }
+                );
+                $(dataControlID).animate({
+                        height: '1254px'
+                    }, 300, function () {
+                    }
+                );
+            });
+
+            //Attach click functionality to all restore buttons
+            $("a.restoreBtn").click(function () {
+
+                var $controlID = $(this).attr("controlID");
+                var gridControlID = "#" + $controlID + "Grid";
+                var dataControlID = "#" + $controlID + "Data";
+
+                // Toggle the Max/Restore buttons
+                $(this).hide();
+                $("a.maxBtn[controlID=" + $controlID + "]").show();
+                //.css({"border": "1px solid #dadada"});
+
+
+                $(gridControlID).animate({
+                        height: '325px'
+                    }, 300, function () {
+                    }
+                );
+                $(dataControlID).animate({
+                    height: '255px'
+                }, 300, function () {
+
+                    $("div.gridBody").show();
+                });
+            });
+            //**End Max/Restore**
+        });
+
+        // Starts timers to load data into each grid
+        $.fn.startPolling = function () {
+
+            this.each(function () {
+
+                var $controlId = $(this).attr("id");
+                var $pollingInterval = $(this).attr("pollingInterval");
+
+                setInterval("pollForData('" + $controlId + "')", $pollingInterval);
+            });
+        };
+
+        // Loads file data into grid
+        $.fn.loadData = function () {
+
+            this.each(function () {
+
+                var $fileName = $(this).attr("sourceFile");
+
+                $(this).load($fileName, function (response, status, xhr) {
+
+                    $(this).prev().text(new Date());
+                });
+            });
+        };
+
+    </script>
+    <script>
+        setInterval("update()", 1000);
+
+        function update() {
+            window.location.href='dtcc'
+        }
+    </script>
+
+{% endblock js %}
+
+{% block css %}
+    <link rel="stylesheet" href="../../static/css/global1.css" type="text/css"/>
+    <link rel="stylesheet" href="../../static/css/gtrdashboard.css" type="text/css"/>
+    <style>
+        .smaller_front {
+            font-size: 11px;
+        }
+
+        *, ::after, ::before {
+            box-sizing: initial !important;
+        }
+
+        .centeralize {
+            margin: 0 auto;
+            width: 970px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="smaller_front centeralize">
+        <!-- Start commodities swaps grid -->
+        <div id="commoditiesSwapsGrid" class="creditSwapsGrid gridBody">
+            <table style="height: 26px" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr class="gridHeader">
+                    <td width="1%">&nbsp;</td>
+                    <td width="81%" class="gridText">Commodities - Swaps</td>
+                    <td width="8%">
+                        <a class="refreshBtn bold primaryBtn outlinedBtn" controlID="commoditiesSwaps"
+                           href="#">Refresh</a>
+                    </td>
+                    <td width="10%">
+                        <a class="maxBtn bold primaryBtn outlinedBtn" controlID="commoditiesSwaps" href="#">Maximize</a>
+                        <a class="restoreBtn bold primaryBtn outlinedBtn" controlID="commoditiesSwaps"
+                           href="#">Restore</a>
+                    </td>
+                </tr>
+            </table>
+
+            <table width="970px" border="0" cellpadding="0" cellspacing="0">
+                <tr class="trackerHd">
+                    <th align="center" width="65px">Action</th>
+                    <th width="128px">UPI&#47;Taxonomy</th>
+                    <th align="center" width="96px">Execution<br/>Timestamp (UTC)</th>
+                    <th align="center" width="100px">Underlying<br/>Asset 1</th>
+                    <th align="center" width="100px">Underlying<br/>Asset 2</th>
+                    <th align="center" width="100px">Maturity<br/>Date</th>
+                    <th align="center" width="54px">Rounded<br/>Notional<br/>Currency/<br>Quantity</th>
+                    <th align="center" width="41px">Notional<br>Quantity UOM/<br>Currency</th>
+                    <th align="center" width="35px">Clear</th>
+                    <th align="center" width="52px">Price<br/>Notation</th>
+                    <th align="center" width="52px">Price<br/>Notation<br/>Type</th>
+                </tr>
+            </table>
+
+            <span id="commoditiesSwapsInfo" style="display: none"></span>
+            <!-- Data injected into div on the fly via AJAX -->
+            <!-- Local: prices/EQUITIES_SWAPS_PRICES.HTML-->
+            {#	<div class="trackerGrid pollingGrid" id="commoditiesSwapsData" pollingInterval="5000" sourceFile="../../../../prices/COMMODITIES_SWAPS_PRICES.HTML">#}
+            <div class="trackerGrid pollingGrid" id="commoditiesSwapsData">
+                <table width="970px" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                    {% for record in comSwap %}
+                        <tr>
+                            <th align="center" width="65px">{{ record.action }}</th>
+                            <th width="128px" style="word-break:break-all;">{{ record.taxonomy }}</th>
+                            <th align="center" width="96px">{{ record.execution_timestamp }}</th>
+                            <th align="center" width="100px">{{ record.underlying_asset_1 }}</th>
+                            <th align="center" width="100px">{{ record.underlying_asset_2 }}</th>
+                            <th align="center" width="100px">{{ record.end_date }}</th>
+                            <th align="center" width="54px">{{ record.rounded_notional_amount_1 }}</th>
+                            <th align="center" width="41px">{{ record.notional_currency_1 }}</th>
+                            <th align="center" width="35px">{{ record.cleared }}</th>
+                            <th align="center" width="52px">{{ record.price_notation }}</th>
+                            <th align="center" width="52px">{{ record.price_notation_type }}</th>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- End commodities swaps grid -->
+
+        <!-- Start commodities options grid -->
+        <div id="commoditiesOptionsGrid" class="creditOptionsGrid gridBody">
+            <table style="height: 26px" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr class="gridHeader">
+                    <td width="1%">&nbsp;</td>
+                    <td width="81%" class="gridText">Commodities - Options</td>
+                    <td width="8%">
+                        <a class="refreshBtn bold primaryBtn outlinedBtn" controlID="commoditiesOptions"
+                           href="#">Refresh</a>
+                    </td>
+                    <td width="10%">
+                        <a class="maxBtn bold primaryBtn outlinedBtn" controlID="commoditiesOptions"
+                           href="#">Maximize</a>
+                        <a class="restoreBtn bold primaryBtn outlinedBtn" controlID="commoditiesOptions"
+                           href="#">Restore</a>
+                    </td>
+                </tr>
+            </table>
+
+            <table width="970px" border="0" cellpadding="0" cellspacing="0">
+                <tr class="trackerHd">
+                    <th align="center" width="51px">Action</th>
+                    <th align="center" width="100px">UPI&#47;Taxonomy</th>
+                    <th align="center" width="70px">Execution<br/>Timestamp (UTC)</th>
+                    <th align="center" width="34px">Option<br/>Type</th>
+                    <th align="center" width="78px">Underlying<br/>Asset 1</th>
+                    <th align="center" width="78px">Underlying<br/>Asset 2</th>
+                    <th align="center" width="72px">Exercise<br/>Date</th>
+                    <th align="center" width="72px">Maturity<br/>Date</th>
+                    <th align="center" width="78px">Rounded<br/>Notional<br/>Currency<br>/Quantity</th>
+                    <th align="center" width="48px">Notional<br>Quantity UOM/<br>Currency</th>
+                    <th align="center" width="30px">Clear</th>
+                    <th align="center" width="48px">Option<br/>Level</th>
+                    <th align="center" width="47px">Price<br/>Notation<br/>Type</th>
+                    <th align="center" width="47px">Option<br/>Premium</th>
+                </tr>
+            </table>
+
+            <span id="commoditiesOptionsInfo" style="display: none"></span>
+            <!-- Data injected into div on the fly via AJAX -->
+            <!-- Local: prices/EQUITIES_OPTIONS_PRICES.HTML-->
+            {#	<div class="trackerGrid pollingGrid" id="commoditiesOptionsData" pollingInterval="5000" sourceFile="../../../../prices/COMMODITIES_OPTIONS_PRICES.HTML">#}
+            <div class="trackerGrid pollingGrid" id="commoditiesOptionsData">
+                <table width="970px" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                    {% for record in comOption %}
+                        <tr>
+                            <th align="center" width="51px">{{ record.action }}</th>
+                            <th align="center" width="100px" style="word-break:break-all;">{{ record.taxonomy }}</th>
+                            <th align="center" width="70px">{{ record.execution_timestamp }}</th>
+                            <th align="center" width="34px">{{ record.option_type }}</th>
+                            <th align="center" width="78px">{{ record.underlying_asset_1 }}</th>
+                            <th align="center" width="78px">{{ record.underlying_asset_2 }}</th>
+                            <th align="center" width="72px">{{ record.effective_date }}</th>
+                            <th align="center" width="72px">{{ record.end_date }}</th>
+                            <th align="center" width="78px">{{ record.rounded_notional_amount_1 }}</th>
+                            <th align="center" width="48px">{{ record.notional_currency_1 }}</th>
+                            <th align="center" width="30px">{{ record.cleared }}</th>
+                            <th align="center" width="48px">{{ record.option_strike_price }}</th>
+                            <th align="center" width="47px">{{ record.option_type }}</th>
+                            <th align="center" width="47px">{{ record.option_premium }}</th>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- End commodities options grid -->
+    </div>
+    <!-- End rates options grid -->
+
+{% endblock %}
