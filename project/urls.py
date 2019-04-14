@@ -20,5 +20,8 @@ from mlp import views
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('mlp/', include('mlp.urls')),
-    path('', views.index, name='index')
+    path('', views.index, name='index'),
+    path('dtcc', views.dtcc, name='dtcc'),
+    path('fred', views.fred, name='fred'),
+    path('fred_search/<str:name>/', views.fred_search, name='fred_search')
 ]
